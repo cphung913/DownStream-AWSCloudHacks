@@ -1,0 +1,103 @@
+enum SpillType {
+  INDUSTRIAL_SOLVENT
+  AGRICULTURAL_RUNOFF
+  OIL_PETROLEUM
+  HEAVY_METALS
+}
+
+enum RiskLevel {
+  CLEAR
+  MONITOR
+  ADVISORY
+  DANGER
+}
+
+enum SimulationStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum TickResolution {
+  FIFTEEN_MIN
+  ONE_HOUR
+  SIX_HOURS
+}
+
+type Town {
+  id: ID!
+  name: String!
+  population: Int!
+  fips: String
+  segmentId: String!
+  riskLevel: RiskLevel!
+  tickCrossed: Int
+}
+
+type SegmentUpdate {
+  segmentId: String!
+  concentration: Float!
+  riskLevel: RiskLevel!
+}
+
+type Tick {
+  simulationId: ID!
+  tick: Int!
+  segmentUpdates: [SegmentUpdate!]!
+}
+
+type IncidentReport {
+  executiveSummary: String!
+  populationAtRisk: Int!
+  estimatedCleanupCost: Float!
+  regulatoryObligations: [String!]!
+  mitigationPriorityList: [String!]!
+}
+
+type Simulation {
+  id: ID!
+  status: SimulationStatus!
+  region: String!
+  spillType: SpillType!
+  volumeGallons: Float!
+  temperatureC: Float!
+  responseDelayHours: Float!
+  budgetCapUsd: Float!
+  tickResolution: TickResolution!
+  currentTick: Int!
+  totalTicks: Int!
+  towns: [Town!]!
+  report: IncidentReport
+}
+
+input StartSimulationInput {
+  region: String!
+  sourceSegmentId: String!
+  spillType: SpillType!
+  volumeGallons: Float!
+  temperatureC: Float!
+  responseDelayHours: Float!
+  budgetCapUsd: Float!
+  tickResolution: TickResolution!
+}
+
+input PlaceBarrierInput {
+  simulationId: ID!
+  segmentId: String!
+  radiusMeters: Float!
+}
+
+type Query {
+  getSimulation(id: ID!): Simulation
+}
+
+type Mutation {
+  startSimulation(input: StartSimulationInput!): Simulation!
+  placeBarrier(input: PlaceBarrierInput!): Simulation!
+}
+
+type Subscription {
+  onTickUpdate(simulationId: ID!): Tick
+    @aws_subscribe(mutations: ["_internal_publishTick"])
+}
