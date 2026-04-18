@@ -38,6 +38,7 @@ export function useMapLayers(map: MapLibreMap | null, ready: boolean, riverGeojs
   const segmentMap = useSimulationStore((s) => s.segmentMap);
   const townRiskMap = useSimulationStore((s) => s.townRiskMap);
   const sourceSegmentId = useSimulationStore((s) => s.config.sourceSegmentId);
+  const sourceLngLat = useSimulationStore((s) => s.config.sourceLngLat);
   const barriers = useSimulationStore((s) => s.barriers);
 
   useEffect(() => {
@@ -90,17 +91,18 @@ export function useMapLayers(map: MapLibreMap | null, ready: boolean, riverGeojs
     if (!src) return;
     src.setData({
       type: "FeatureCollection",
-      features: sourceSegmentId
-        ? [
-            {
-              type: "Feature",
-              geometry: { type: "Point", coordinates: [0, 0] },
-              properties: { segmentId: sourceSegmentId },
-            },
-          ]
-        : [],
+      features:
+        sourceSegmentId && sourceLngLat
+          ? [
+              {
+                type: "Feature",
+                geometry: { type: "Point", coordinates: sourceLngLat },
+                properties: { segmentId: sourceSegmentId },
+              },
+            ]
+          : [],
     });
-  }, [map, ready, sourceSegmentId]);
+  }, [map, ready, sourceSegmentId, sourceLngLat]);
 
   useEffect(() => {
     if (!map || !ready) return;
@@ -110,7 +112,7 @@ export function useMapLayers(map: MapLibreMap | null, ready: boolean, riverGeojs
       type: "FeatureCollection",
       features: barriers.map((b) => ({
         type: "Feature",
-        geometry: { type: "Point", coordinates: [0, 0] },
+        geometry: { type: "Point", coordinates: b.lngLat },
         properties: { barrierId: b.id, kind: b.kind, radius: b.radiusMeters },
       })),
     });

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type {
   Barrier,
   IncidentReportJson,
+  LngLat,
   MitigationKind,
   Region,
   SegmentState,
@@ -25,6 +26,7 @@ import { MITIGATION_COST } from "@/types/simulation";
 const DEFAULT_CONFIG: SimulationConfig = {
   region: "mississippi",
   sourceSegmentId: null,
+  sourceLngLat: null,
   spillType: "INDUSTRIAL_SOLVENT",
   volumeGallons: 10_000,
   temperatureC: 18,
@@ -58,7 +60,7 @@ interface SimulationState {
 
   // config setters
   setRegion: (r: Region) => void;
-  setSourceSegmentId: (id: string | null) => void;
+  setSource: (segmentId: string | null, lngLat: LngLat | null) => void;
   setSpillType: (t: SpillType) => void;
   setVolumeGallons: (v: number) => void;
   setTemperatureC: (v: number) => void;
@@ -77,7 +79,12 @@ interface SimulationState {
   setTick: (tick: number) => void;
 
   // mitigation
-  placeBarrier: (kind: MitigationKind, segmentId: string, radiusMeters: number) => { ok: true } | { ok: false; reason: string };
+  placeBarrier: (
+    kind: MitigationKind,
+    segmentId: string,
+    lngLat: LngLat,
+    radiusMeters: number,
+  ) => { ok: true } | { ok: false; reason: string };
   removeBarrier: (barrierId: string) => void;
 
   // derived helpers
@@ -101,8 +108,10 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   barriers: [],
   report: null,
 
-  setRegion: (region) => set((s) => ({ config: { ...s.config, region, sourceSegmentId: null } })),
-  setSourceSegmentId: (id) => set((s) => ({ config: { ...s.config, sourceSegmentId: id } })),
+  setRegion: (region) =>
+    set((s) => ({ config: { ...s.config, region, sourceSegmentId: null, sourceLngLat: null } })),
+  setSource: (segmentId, lngLat) =>
+    set((s) => ({ config: { ...s.config, sourceSegmentId: segmentId, sourceLngLat: lngLat } })),
   setSpillType: (spillType) => set((s) => ({ config: { ...s.config, spillType } })),
   setVolumeGallons: (volumeGallons) => set((s) => ({ config: { ...s.config, volumeGallons } })),
   setTemperatureC: (temperatureC) => set((s) => ({ config: { ...s.config, temperatureC } })),
@@ -165,7 +174,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       return { tick, segmentMap: snapshot.segments, townRiskMap: snapshot.towns };
     }),
 
-  placeBarrier: (kind, segmentId, radiusMeters) => {
+  placeBarrier: (kind, segmentId, lngLat, radiusMeters) => {
     const s = get();
     const cost = MITIGATION_COST[kind];
     if (s.totalMitigationCost() + cost > s.config.budgetCapUsd) {
@@ -175,6 +184,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       id: `b-${crypto.randomUUID()}`,
       kind,
       segmentId,
+      lngLat,
       radiusMeters,
       costUsd: cost,
       placedAtTick: s.tick,

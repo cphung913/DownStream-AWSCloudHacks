@@ -23,9 +23,12 @@ export type MitigationKind =
   | "BIOREMEDIATION"
   | "EMERGENCY_DIVERSION";
 
+export type LngLat = [number, number];
+
 export interface SimulationConfig {
   region: Region;
   sourceSegmentId: string | null;
+  sourceLngLat: LngLat | null;
   spillType: SpillType;
   volumeGallons: number;
   temperatureC: number;
@@ -38,6 +41,7 @@ export interface Barrier {
   id: string;
   kind: MitigationKind;
   segmentId: string;
+  lngLat: LngLat;
   radiusMeters: number;
   costUsd: number;
   placedAtTick: number;

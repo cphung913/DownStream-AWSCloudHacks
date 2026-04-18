@@ -14,7 +14,7 @@ export function Map() {
   const [ready, setReady] = useState(false);
 
   const region = useSimulationStore((s) => s.config.region);
-  const setSourceSegmentId = useSimulationStore((s) => s.setSourceSegmentId);
+  const setSource = useSimulationStore((s) => s.setSource);
   const placeBarrier = useSimulationStore((s) => s.placeBarrier);
   const mode = useUiStore((s) => s.mode);
   const pendingKind = useUiStore((s) => s.pendingMitigationKind);
@@ -62,14 +62,21 @@ export function Map() {
     canvas.style.cursor = mode === "inspect" ? "grab" : "crosshair";
 
     const handler = (e: maplibregl.MapMouseEvent) => {
-      const features = map.queryRenderedFeatures(e.point, { layers: ["river-line"] });
-      const segmentId = features[0]?.properties?.segment_id as string | undefined;
-      if (!segmentId) return;
+      if (mode !== "pinSource" && mode !== "placeMitigation") return;
+
+      const riverLayer = map.getLayer("river-line") ? ["river-line"] : undefined;
+      const hit = riverLayer
+        ? map.queryRenderedFeatures(e.point, { layers: riverLayer })[0]
+        : undefined;
+      const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+      const segmentId =
+        (hit?.properties?.segment_id as string | undefined) ?? synthSegmentId(lngLat);
+
       if (mode === "pinSource") {
-        setSourceSegmentId(segmentId);
+        setSource(segmentId, lngLat);
         cancel();
       } else if (mode === "placeMitigation" && pendingKind) {
-        const r = placeBarrier(pendingKind, segmentId, pendingRadius);
+        const r = placeBarrier(pendingKind, segmentId, lngLat, pendingRadius);
         if (!r.ok) console.warn("[mitigation] rejected:", r.reason);
         cancel();
       }
@@ -78,7 +85,14 @@ export function Map() {
     return () => {
       map.off("click", handler);
     };
-  }, [ready, mode, pendingKind, pendingRadius, setSourceSegmentId, placeBarrier, cancel]);
+  }, [ready, mode, pendingKind, pendingRadius, setSource, placeBarrier, cancel]);
 
   return <div ref={containerRef} className="absolute inset-0" />;
+}
+
+// Used in demo mode when the basin GeoJSON isn't loaded, so no river-line feature
+// sits under the click. Deterministic from coords so the same click always yields
+// the same id; real runs overwrite this with the NHD ComID from the layer query.
+function synthSegmentId([lng, lat]: [number, number]): string {
+  return `synth-${lng.toFixed(4)}_${lat.toFixed(4)}`;
 }
