@@ -4,7 +4,7 @@ import { useAlertStore } from "@/stores/alert";
 import type { RiskLevel, SegmentState, TownRisk } from "@/types/simulation";
 import { TICK_RESOLUTION_MINUTES } from "@/types/simulation";
 import { createAppSyncClient } from "@/lib/appsync";
-import { generateSyntheticRiver, mockConcentrationAt } from "@/lib/syntheticRiver";
+import { generateSyntheticRiver, mockConcentrationAt, PLUME_SPEED } from "@/lib/syntheticRiver";
 
 /**
  * Connects the simulation store to tick sources.
@@ -52,7 +52,7 @@ export function useSimulationDriver() {
     // Walk the plume the full length of the river, plus slack for the peak
     // to pass the last town. Ticks-per-advection-step is baked into
     // mockConcentrationAt; we just need enough ticks to cover `maxDistance`.
-    const totalTicks = Math.max(24, Math.ceil(river.maxDistance / 2.4) + 10);
+    const totalTicks = Math.max(24, Math.ceil(river.maxDistance / PLUME_SPEED) + 10);
     const tickIntervalMs = Math.max(
       120,
       1000 * (TICK_RESOLUTION_MINUTES[config.tickResolution] / 60) * 0.5,

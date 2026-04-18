@@ -16,6 +16,12 @@
  * same arguments and get identical segment ids / distances.
  */
 import type { LngLat, Region } from "@/types/simulation";
+import mississippiBackbone from "./mississippi-backbone.json";
+
+interface BackboneData {
+  mainStem: LngLat[];
+  tributaries: Array<{ name: string; coords: LngLat[] }>;
+}
 
 export interface SyntheticSegment {
   segmentId: string;
@@ -54,145 +60,19 @@ interface Basin {
   towns: ReadonlyArray<{ name: string; population: number; lngLat: LngLat }>;
 }
 
-// Hand-traced approximation of the Mississippi River from just above the
-// Missouri confluence down to Head of Passes (~70 waypoints). Each LngLat
-// is [lng, lat]. Accurate enough for a demo basemap — not survey grade.
+// Real Mississippi basin geometry, extracted from Natural Earth's 10m rivers
+// dataset (nvkelso/natural-earth-vector) and downsampled per tributary. Main
+// stem = 647 points from upstream of the Missouri confluence to Head of Passes.
+// Tributaries: Ohio, Missouri, Arkansas, Red, White, Tennessee. Coordinates
+// live in `./mississippi-backbone.json` so they're not inlined in source.
+//
+// The same data is also served as `/data/mississippi.geojson` from /public so
+// `useRiverGraph`'s fetch path exercises the production code path.
+const backbone = mississippiBackbone as BackboneData;
+
 const MISSISSIPPI: Basin = {
-  mainStem: [
-    [-90.200, 38.700],
-    [-90.180, 38.630], // St. Louis / Missouri confluence
-    [-90.020, 38.500],
-    [-89.960, 38.380],
-    [-89.900, 38.300],
-    [-89.830, 38.100],
-    [-89.830, 37.910], // Chester, IL
-    [-89.630, 37.550],
-    [-89.520, 37.310], // Cape Girardeau
-    [-89.350, 37.130],
-    [-89.180, 37.000], // Cairo, IL / Ohio confluence
-    [-89.195, 36.880],
-    [-89.260, 36.775],
-    [-89.345, 36.720],
-    [-89.435, 36.635],
-    [-89.530, 36.595], // New Madrid
-    [-89.590, 36.480],
-    [-89.555, 36.340],
-    [-89.475, 36.245],
-    [-89.635, 36.105], // Caruthersville
-    [-89.750, 35.990],
-    [-89.895, 35.870],
-    [-89.870, 35.700], // Osceola
-    [-89.990, 35.555],
-    [-90.050, 35.380],
-    [-90.070, 35.250],
-    [-90.060, 35.150], // Memphis, TN
-    [-90.130, 35.000],
-    [-90.210, 34.860],
-    [-90.370, 34.770],
-    [-90.580, 34.545], // Helena, AR
-    [-90.790, 34.440],
-    [-90.900, 34.320],
-    [-90.950, 34.150],
-    [-90.975, 33.985],
-    [-91.020, 33.800], // Rosedale, MS
-    [-91.055, 33.620], // Arkansas River confluence
-    [-91.075, 33.415], // Greenville, MS
-    [-91.205, 33.350],
-    [-91.215, 33.185],
-    [-91.170, 33.010],
-    [-91.075, 32.815], // Lake Providence
-    [-91.115, 32.640],
-    [-91.220, 32.490],
-    [-91.115, 32.400],
-    [-90.905, 32.370],
-    [-90.870, 32.350], // Vicksburg, MS / Yazoo confluence
-    [-90.950, 32.200],
-    [-91.105, 32.050],
-    [-91.260, 31.890],
-    [-91.380, 31.750],
-    [-91.400, 31.555], // Natchez, MS
-    [-91.475, 31.355],
-    [-91.450, 31.155],
-    [-91.385, 30.970],
-    [-91.380, 30.780], // St. Francisville / Red-Atchafalaya
-    [-91.270, 30.580],
-    [-91.185, 30.460], // Baton Rouge, LA
-    [-91.090, 30.400],
-    [-91.005, 30.300],
-    [-90.990, 30.105], // Donaldsonville
-    [-90.885, 30.020],
-    [-90.710, 29.980],
-    [-90.540, 29.975],
-    [-90.370, 29.910], // Luling
-    [-90.245, 29.950],
-    [-90.130, 29.945],
-    [-90.075, 29.950], // New Orleans, LA
-    [-89.970, 29.870],
-    [-89.830, 29.710],
-    [-89.650, 29.555],
-    [-89.470, 29.390],
-    [-89.370, 29.270],
-    [-89.205, 29.180], // Head of Passes
-  ],
-  tributaries: [
-    {
-      name: "Ohio",
-      coords: [
-        [-85.000, 38.250],
-        [-85.750, 38.250],
-        [-86.500, 38.100],
-        [-87.570, 37.970], // Evansville, IN
-        [-88.100, 37.800],
-        [-88.420, 37.470],
-        [-88.620, 37.300], // Paducah, KY
-        [-88.980, 37.080],
-        [-89.180, 37.000], // junction at Cairo
-      ],
-    },
-    {
-      name: "Missouri",
-      coords: [
-        [-95.000, 39.200],
-        [-94.580, 39.100], // Kansas City
-        [-93.500, 39.000],
-        [-92.330, 39.000], // Columbia, MO
-        [-91.500, 38.850],
-        [-90.700, 38.800],
-        [-90.180, 38.630], // junction at St. Louis
-      ],
-    },
-    {
-      name: "Arkansas",
-      coords: [
-        [-94.500, 35.400],
-        [-93.500, 35.000],
-        [-92.500, 34.500],
-        [-91.800, 34.000],
-        [-91.400, 33.800],
-        [-91.055, 33.620], // junction near Rosedale
-      ],
-    },
-    {
-      name: "Yazoo",
-      coords: [
-        [-90.200, 33.400],
-        [-90.400, 33.200],
-        [-90.600, 32.900],
-        [-90.850, 32.450],
-        [-90.870, 32.350], // junction at Vicksburg
-      ],
-    },
-    {
-      name: "Red/Atchafalaya",
-      coords: [
-        [-91.380, 30.780], // junction at St. Francisville
-        [-91.700, 30.800],
-        [-92.050, 30.900],
-        [-92.400, 31.000],
-        [-92.800, 31.200], // Alexandria, LA
-      ],
-    },
-  ],
+  mainStem: backbone.mainStem,
+  tributaries: backbone.tributaries,
   towns: [
     { name: "Cairo", population: 2100, lngLat: [-89.180, 37.000] },
     { name: "Memphis", population: 633000, lngLat: [-90.060, 35.150] },
@@ -310,6 +190,16 @@ function pushSegment(
 }
 
 /**
+ * Plume-advection speed, in segments per tick. Tuned so a St. Louis → Gulf
+ * run on the 647-vertex real Mississippi completes in ~25-30 seconds at the
+ * default 500ms tick interval. Exported so `useSimulationDriver` can size its
+ * `totalTicks` off the same number.
+ */
+export const PLUME_SPEED = 12;
+const LEADING_EDGE_WIDTH = 30;
+const TRAIL_DECAY_LENGTH = 240;
+
+/**
  * Plume-advection concentration at a river segment at tick T.
  * Rough pulse model — not physics, just enough to walk a coherent gradient
  * downstream over time. Segments with `distanceFromSource >= UNREACHED`
@@ -318,18 +208,17 @@ function pushSegment(
 export function mockConcentrationAt(
   distanceFromSource: number,
   tick: number,
-  speed = 2.4,
+  speed = PLUME_SPEED,
 ): number {
   const front = tick * speed;
-  const leadingEdgeWidth = 8;
 
-  if (distanceFromSource > front + leadingEdgeWidth) return 0;
+  if (distanceFromSource > front + LEADING_EDGE_WIDTH) return 0;
   if (distanceFromSource > front) {
-    const t = (front + leadingEdgeWidth - distanceFromSource) / leadingEdgeWidth;
+    const t = (front + LEADING_EDGE_WIDTH - distanceFromSource) / LEADING_EDGE_WIDTH;
     return Math.max(0, t * 0.55);
   }
   const pastFront = front - distanceFromSource;
-  return Math.max(0.25, 1 - pastFront / 60);
+  return Math.max(0.25, 1 - pastFront / TRAIL_DECAY_LENGTH);
 }
 
 // -------- procedural fallback (ohio / colorado until real basins land) ----------
