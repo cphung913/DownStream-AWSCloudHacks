@@ -1,0 +1,21 @@
+{
+  "name": "downstream",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DownStream — Watershed spill simulator (AWS Hackathon)",
+  "workspaces": [
+    "frontend",
+    "infra"
+  ],
+  "scripts": {
+    "lint:py": "ruff check backend/lambdas scripts ml",
+    "typecheck:py": "pyright backend/lambdas scripts ml || true",
+    "synth": "npm -w infra run synth",
+    "deploy": "npm -w infra run deploy",
+    "dev": "npm -w frontend run dev",
+    "build:frontend": "npm -w frontend run build"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

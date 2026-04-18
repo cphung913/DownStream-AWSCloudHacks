@@ -1,62 +1,95 @@
 {
-  "Comment": "Watershed spill simulation state machine. Express Workflow. Execution ARN is the simulation session ID.",
+  "Comment": "DownStream watershed spill simulation",
   "StartAt": "VALIDATE_INPUT",
   "States": {
     "VALIDATE_INPUT": {
-      "Type": "Task",
-      "Resource": "${SpillInitializerArn}",
+      "Type": "Pass",
       "Parameters": {
-        "action": "validate",
-        "input.$": "$"
+        "input.$": "$",
+        "simulationId.$": "$$.Execution.Id"
       },
-      "ResultPath": "$.validated",
       "Next": "LOAD_RIVER_GRAPH"
     },
     "LOAD_RIVER_GRAPH": {
       "Type": "Task",
-      "Resource": "${SpillInitializerArn}",
+      "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "action": "loadGraph",
-        "region.$": "$.validated.region"
+        "FunctionName": "${SpillInitializerFnArn}",
+        "Payload": {
+          "phase": "load",
+          "input.$": "$.input",
+          "simulationId.$": "$.simulationId"
+        }
       },
       "ResultPath": "$.graph",
       "Next": "INITIALIZE_STATE"
     },
     "INITIALIZE_STATE": {
       "Type": "Task",
-      "Resource": "${SpillInitializerArn}",
+      "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
-        "action": "seed",
-        "input.$": "$"
+        "FunctionName": "${SpillInitializerFnArn}",
+        "Payload": {
+          "phase": "init",
+          "input.$": "$.input",
+          "simulationId.$": "$.simulationId",
+          "graph.$": "$.graph.Payload"
+        }
       },
       "ResultPath": "$.state",
       "Next": "RUN_TICKS"
     },
     "RUN_TICKS": {
       "Type": "Map",
-      "ItemsPath": "$.state.tickSchedule",
+      "ItemsPath": "$.state.Payload.tickSequence",
       "MaxConcurrency": 1,
+      "Parameters": {
+        "simulationId.$": "$.simulationId",
+        "input.$": "$.input",
+        "graphS3Key.$": "$.graph.Payload.graphS3Key",
+        "tick.$": "$$.Map.Item.Value"
+      },
       "Iterator": {
-        "StartAt": "Propagate",
+        "StartAt": "PROPAGATE",
         "States": {
-          "Propagate": {
+          "PROPAGATE": {
             "Type": "Task",
-            "Resource": "${TickPropagatorArn}",
-            "Next": "CheckThresholds"
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "FunctionName": "${TickPropagatorFnArn}",
+              "Payload.$": "$"
+            },
+            "ResultPath": "$.propagation",
+            "Next": "CHECK_THRESHOLDS"
           },
-          "CheckThresholds": {
+          "CHECK_THRESHOLDS": {
             "Type": "Task",
-            "Resource": "${ThresholdCheckerArn}",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "FunctionName": "${ThresholdCheckerFnArn}",
+              "Payload": {
+                "simulationId.$": "$.simulationId",
+                "tick.$": "$.tick",
+                "propagation.$": "$.propagation.Payload"
+              }
+            },
             "End": true
           }
         }
       },
-      "ResultPath": "$.tickResults",
+      "ResultPath": "$.ticks",
       "Next": "GENERATE_REPORT"
     },
     "GENERATE_REPORT": {
       "Type": "Task",
-      "Resource": "${ReportGeneratorArn}",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${ReportGeneratorFnArn}",
+        "Payload": {
+          "simulationId.$": "$.simulationId",
+          "input.$": "$.input"
+        }
+      },
       "End": true
     }
   }

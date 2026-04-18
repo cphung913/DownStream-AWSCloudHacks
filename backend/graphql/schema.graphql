@@ -1,50 +1,21 @@
-enum SpillType {
-  INDUSTRIAL_SOLVENT
-  AGRICULTURAL_RUNOFF
-  OIL_PETROLEUM
-  HEAVY_METALS
-}
+enum SpillType { INDUSTRIAL_SOLVENT AGRICULTURAL_RUNOFF OIL_PETROLEUM HEAVY_METALS }
+enum RiskLevel { NONE MONITOR ADVISORY DANGER }
+enum Basin { MISSISSIPPI OHIO COLORADO }
 
-enum RiskLevel {
-  CLEAR
-  MONITOR
-  ADVISORY
-  DANGER
-}
+type SegmentUpdate { segmentId: ID!, concentration: Float!, riskLevel: RiskLevel! }
 
-enum SimulationStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
-}
-
-enum TickResolution {
-  FIFTEEN_MIN
-  ONE_HOUR
-  SIX_HOURS
-}
-
-type Town {
-  id: ID!
-  name: String!
-  population: Int!
-  fips: String
-  segmentId: String!
-  riskLevel: RiskLevel!
-  tickCrossed: Int
-}
-
-type SegmentUpdate {
-  segmentId: String!
-  concentration: Float!
-  riskLevel: RiskLevel!
-}
-
-type Tick {
+type TickUpdate @aws_api_key @aws_iam {
   simulationId: ID!
   tick: Int!
   segmentUpdates: [SegmentUpdate!]!
+}
+
+type TownRisk {
+  townId: ID!
+  townName: String!
+  population: Int!
+  riskLevel: RiskLevel!
+  crossedAtTick: Int!
 }
 
 type IncidentReport {
@@ -56,48 +27,62 @@ type IncidentReport {
 }
 
 type Simulation {
-  id: ID!
-  status: SimulationStatus!
-  region: String!
+  simulationId: ID!
+  executionArn: String!
+  basin: Basin!
+  sourceSegmentId: ID!
   spillType: SpillType!
   volumeGallons: Float!
-  temperatureC: Float!
-  responseDelayHours: Float!
-  budgetCapUsd: Float!
-  tickResolution: TickResolution!
-  currentTick: Int!
+  temperatureCelsius: Float!
+  responseDelayHours: Int!
+  budgetUsd: Float!
+  tickResolutionMinutes: Int!
   totalTicks: Int!
-  towns: [Town!]!
+  currentTick: Int!
+  townRisks: [TownRisk!]!
   report: IncidentReport
 }
 
-input StartSimulationInput {
-  region: String!
-  sourceSegmentId: String!
-  spillType: SpillType!
-  volumeGallons: Float!
-  temperatureC: Float!
-  responseDelayHours: Float!
-  budgetCapUsd: Float!
-  tickResolution: TickResolution!
+input MitigationInput {
+  kind: String!
+  segmentId: ID!
+  costUsd: Float!
+  radiusMeters: Float
 }
 
-input PlaceBarrierInput {
-  simulationId: ID!
-  segmentId: String!
-  radiusMeters: Float!
+input StartSimulationInput {
+  basin: Basin!
+  sourceSegmentId: ID!
+  spillType: SpillType!
+  volumeGallons: Float!
+  temperatureCelsius: Float!
+  responseDelayHours: Int!
+  mitigations: [MitigationInput!]!
+  budgetUsd: Float!
+  tickResolutionMinutes: Int!
+  totalTicks: Int!
+}
+
+type StartSimulationResult { simulationId: ID!, executionArn: String! }
+
+input SegmentUpdateInput { segmentId: ID!, concentration: Float!, riskLevel: RiskLevel! }
+input TickUpdateInput { simulationId: ID!, tick: Int!, segmentUpdates: [SegmentUpdateInput!]! }
+
+type Mutation {
+  startSimulation(input: StartSimulationInput!): StartSimulationResult!
+  applyMitigation(simulationId: ID!, mitigation: MitigationInput!): Simulation!
+  publishTickUpdate(update: TickUpdateInput!): TickUpdate! @aws_iam
 }
 
 type Query {
-  getSimulation(id: ID!): Simulation
-}
-
-type Mutation {
-  startSimulation(input: StartSimulationInput!): Simulation!
-  placeBarrier(input: PlaceBarrierInput!): Simulation!
+  getSimulation(simulationId: ID!): Simulation
+  getTickSnapshot(simulationId: ID!, tick: Int!): TickUpdate
 }
 
 type Subscription {
-  onTickUpdate(simulationId: ID!): Tick
-    @aws_subscribe(mutations: ["_internal_publishTick"])
+  onTickUpdate(simulationId: ID!): TickUpdate
+    @aws_subscribe(mutations: ["publishTickUpdate"])
+    @aws_api_key
 }
+
+schema { query: Query, mutation: Mutation, subscription: Subscription }
