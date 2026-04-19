@@ -204,21 +204,28 @@ const TRAIL_DECAY_LENGTH = 240;
  * Rough pulse model — not physics, just enough to walk a coherent gradient
  * downstream over time. Segments with `distanceFromSource >= UNREACHED`
  * sit well beyond the front and stay clear forever.
+ *
+ * `barrierMultiplier` is the product of all upstream mitigation pass-through
+ * fractions (from MITIGATION_EFFECTIVENESS). 1.0 = no barriers.
  */
 export function mockConcentrationAt(
   distanceFromSource: number,
   tick: number,
   speed = PLUME_SPEED,
+  barrierMultiplier = 1.0,
 ): number {
   const front = tick * speed;
 
   if (distanceFromSource > front + LEADING_EDGE_WIDTH) return 0;
+  let raw: number;
   if (distanceFromSource > front) {
     const t = (front + LEADING_EDGE_WIDTH - distanceFromSource) / LEADING_EDGE_WIDTH;
-    return Math.max(0, t * 0.55);
+    raw = Math.max(0, t * 0.55);
+  } else {
+    const pastFront = front - distanceFromSource;
+    raw = Math.max(0.25, 1 - pastFront / TRAIL_DECAY_LENGTH);
   }
-  const pastFront = front - distanceFromSource;
-  return Math.max(0.25, 1 - pastFront / TRAIL_DECAY_LENGTH);
+  return raw * barrierMultiplier;
 }
 
 // -------- procedural fallback (ohio / colorado until real basins land) ----------

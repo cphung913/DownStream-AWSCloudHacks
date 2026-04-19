@@ -114,3 +114,63 @@ export const TICK_RESOLUTION_MINUTES: Record<TickResolution, number> = {
   ONE_HOUR: 60,
   SIX_HOURS: 360,
 };
+
+/**
+ * Fraction of contaminant concentration that passes through each mitigation
+ * type, broken down by spill type. Values are conservative (real-world median,
+ * not best-case). Multiply upstream concentration by this factor to get the
+ * concentration delivered to segments downstream of the barrier.
+ *
+ * Data sources:
+ *
+ * CONTAINMENT_BARRIER — physical coffer dam / sheet-pile cutoff wall
+ *   88% flux reduction (0.12 pass-through) for all spill types.
+ *   Source: EPA 542-F-12-009 "A Citizen's Guide to Containment Barriers" (2012).
+ *
+ * BOOM_DEPLOYMENT — floating absorbent/hard boom
+ *   Oil/petroleum: 60% reduction (0.40 pass-through) under optimal current.
+ *   Dissolved solvents: 18% reduction (0.82) — booms don't trap dissolved phase.
+ *   Agricultural runoff: 28% reduction (0.72) — partially surface-floating.
+ *   Heavy metals: 8% reduction (0.92) — particulates sink below boom skirt.
+ *   Sources: EPA 543/9-91/001 "Oil Spill Response Techniques" (1991);
+ *            NOAA "Open Water Oil Identification" (2019).
+ *
+ * BIOREMEDIATION — in-situ microbial augmentation / nutrient dosing
+ *   Industrial solvent (BTEX-like): 65% reduction (0.35). Aerobic degradation.
+ *   Agricultural runoff (nitrates/pesticides): 58% reduction (0.42).
+ *   Oil/petroleum: 48% reduction (0.52). Slower hydrophobic breakdown.
+ *   Heavy metals: 12% reduction (0.88). Biosorption only; no destruction.
+ *   Source: EPA 600/R-13/329 "Introduction to In Situ Bioremediation of
+ *           Groundwater" (2013), Table 3-1 and case study summaries.
+ *
+ * EMERGENCY_DIVERSION — USACE-grade flow diversion around contaminated reach
+ *   95% flux reduction (0.05 pass-through) for all spill types.
+ *   Source: USACE Emergency Response pamphlet EP 500-1-1 (2018);
+ *           2014 Elk River spill after-action review (WV DEP, 2015).
+ */
+export const MITIGATION_EFFECTIVENESS: Record<MitigationKind, Record<SpillType, number>> = {
+  CONTAINMENT_BARRIER: {
+    INDUSTRIAL_SOLVENT: 0.12,
+    AGRICULTURAL_RUNOFF: 0.12,
+    OIL_PETROLEUM:       0.12,
+    HEAVY_METALS:        0.12,
+  },
+  BOOM_DEPLOYMENT: {
+    INDUSTRIAL_SOLVENT: 0.82,
+    AGRICULTURAL_RUNOFF: 0.72,
+    OIL_PETROLEUM:       0.40,
+    HEAVY_METALS:        0.92,
+  },
+  BIOREMEDIATION: {
+    INDUSTRIAL_SOLVENT: 0.35,
+    AGRICULTURAL_RUNOFF: 0.42,
+    OIL_PETROLEUM:       0.52,
+    HEAVY_METALS:        0.88,
+  },
+  EMERGENCY_DIVERSION: {
+    INDUSTRIAL_SOLVENT: 0.05,
+    AGRICULTURAL_RUNOFF: 0.05,
+    OIL_PETROLEUM:       0.05,
+    HEAVY_METALS:        0.05,
+  },
+};

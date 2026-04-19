@@ -124,7 +124,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   setTickResolution: (tickResolution) => set((s) => ({ config: { ...s.config, tickResolution } })),
 
   startSimulation: () =>
-    set(() => ({
+    set((s) => ({
       simulationId: `sim-${crypto.randomUUID()}`,
       status: "running",
       errorMessage: null,
@@ -134,6 +134,9 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       townRiskMap: new Map(),
       snapshots: [],
       report: null,
+      // Reset all barrier placedAtTick to 0 so they're active from tick 1
+      // of the new run regardless of when they were originally placed.
+      barriers: s.barriers.map((b) => ({ ...b, placedAtTick: 0 })),
     })),
 
   applyTickUpdate: (tick, updates, towns) =>

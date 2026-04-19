@@ -32,8 +32,9 @@ export function Select<T extends string>({ value, onChange, options, placeholder
     <RadixSelect.Root value={value} onValueChange={(v) => onChange(v as T)}>
       <Trigger
         className={clsx(
-          "inline-flex items-center justify-between gap-2 rounded-md bg-bg-elevated border border-border px-3 py-2 text-sm text-ink",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent w-full",
+          "inline-flex items-center justify-between gap-2 rounded-sm border border-border px-2.5 py-1.5 font-mono text-[11px] text-ink w-full",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+          "bg-white/80 hover:bg-white transition-colors cursor-pointer",
           className,
         )}
       >
@@ -42,7 +43,7 @@ export function Select<T extends string>({ value, onChange, options, placeholder
       </Trigger>
       <RadixSelect.Portal>
         <Content
-          className="z-[100] overflow-hidden rounded-md bg-bg-elevated border border-border shadow-panel"
+          className="z-[100] overflow-hidden rounded-sm bg-white border border-border shadow-panel"
           position="popper"
           sideOffset={4}
         >
@@ -63,8 +64,8 @@ function SelectItem({ value, children }: { value: string; children: ReactNode })
   return (
     <Item
       value={value}
-      className="text-sm text-ink px-3 py-1.5 rounded-sm outline-none cursor-default
-                 data-[highlighted]:bg-accent-strong/20 data-[state=checked]:text-accent"
+      className="font-mono text-[11px] text-ink px-3 py-1.5 rounded-sm outline-none cursor-default
+                 data-[highlighted]:bg-accent/20 data-[state=checked]:text-accent-strong"
     >
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
     </Item>

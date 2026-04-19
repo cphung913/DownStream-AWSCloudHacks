@@ -37,6 +37,13 @@ export function Map() {
     });
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "bottom-right");
     map.on("load", () => setReady(true));
+    map.once("error", () => {
+      // ALS style failed (missing map resource or invalid key) — fall back to OSM
+      if (!map.isStyleLoaded()) {
+        map.setStyle(baseStyle);
+        map.once("style.load", () => setReady(true));
+      }
+    });
     mapRef.current = map;
     return () => {
       map.remove();

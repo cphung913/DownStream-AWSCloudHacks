@@ -25,8 +25,8 @@ export function NumberInput({ value, onChange, min, max, step, suffix, className
           if (Number.isFinite(n)) onChange(n);
         }}
         aria-label={rest["aria-label"]}
-        className="bg-bg-elevated border border-border rounded-md px-2.5 py-1.5 text-sm text-ink w-full font-mono
-                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="bg-white/80 border border-border rounded-sm px-2.5 py-1.5 text-[11px] text-ink w-full font-mono
+                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent hover:bg-white transition-colors"
       />
       {suffix ? <span className="text-xs text-ink-dim font-mono">{suffix}</span> : null}
     </div>
