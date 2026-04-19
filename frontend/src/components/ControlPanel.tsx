@@ -129,17 +129,17 @@ export function ControlPanel() {
       </Section>
 
       <Section title="Mitigation">
-        <Field label={`Budget cap · $${(config.budgetCapUsd / 1000).toFixed(0)}k`}>
+        <Field label={`Budget cap · ${formatUsd(config.budgetCapUsd)}`}>
           <Slider
             value={config.budgetCapUsd}
             onChange={setBudgetCapUsd}
-            min={100_000}
-            max={5_000_000}
-            step={50_000}
+            min={500_000}
+            max={15_000_000}
+            step={100_000}
           />
           <div className="flex justify-between text-[11px] text-ink-dim mt-1 font-mono">
-            <span>spent ${((config.budgetCapUsd - remainingBudget()) / 1000).toFixed(0)}k</span>
-            <span>remaining ${(remainingBudget() / 1000).toFixed(0)}k</span>
+            <span>spent {formatUsd(config.budgetCapUsd - remainingBudget())}</span>
+            <span>remaining {formatUsd(remainingBudget())}</span>
           </div>
         </Field>
 
@@ -162,7 +162,7 @@ export function ControlPanel() {
               >
                 <span className="font-medium">{MITIGATION_LABEL[kind]}</span>
                 <span className="text-[10px] font-mono opacity-70">
-                  ${(cost / 1000).toFixed(0)}k
+                  {formatUsd(cost)}
                 </span>
               </button>
             );
@@ -225,4 +225,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+function formatUsd(n: number): string {
+  if (n >= 1_000_000) {
+    const m = n / 1_000_000;
+    return `$${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
+  }
+  return `$${(n / 1000).toFixed(0)}k`;
 }

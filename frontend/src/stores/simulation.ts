@@ -31,7 +31,10 @@ const DEFAULT_CONFIG: SimulationConfig = {
   volumeGallons: 10_000,
   temperatureC: 18,
   responseDelayHours: 24,
-  budgetCapUsd: 1_000_000,
+  // Default bumped from $1M to $3M so a full-mitigation run ($2.2M at the
+  // HMGP-anchored prices) stays feasible. Real Mississippi spill responses
+  // typically run $10-15M; slider max in ControlPanel is sized accordingly.
+  budgetCapUsd: 3_000_000,
   tickResolution: "ONE_HOUR",
 };
 
