@@ -3,7 +3,12 @@
 Watershed spill simulator. Drop a contamination event on a real river map,
 configure hazard / timing / budget, watch the plume propagate downstream in
 real time, and receive an EPA-style incident report authored by Claude via
-Amazon Bedrock.
+Amazon Bedrock. ASW Kinesis is used to stream tick propogation. AWS Lambda 
+and SageMaker powers the actual contamination diffusion physics and 
+dispersion model. AWS StepFunctions compares and scores the mitigation 
+options to the population of towns downstream and budget allocated 
+to the mitigation.
+
 
 ## Layout
 
