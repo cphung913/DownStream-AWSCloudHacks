@@ -14,6 +14,7 @@ import * as kinesis from "aws-cdk-lib/aws-kinesis";
 import * as events from "aws-cdk-lib/aws-events";
 import * as eventsTargets from "aws-cdk-lib/aws-events-targets";
 import * as sns from "aws-cdk-lib/aws-sns";
+import * as snsSubscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as appsync from "aws-cdk-lib/aws-appsync";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
@@ -96,13 +97,35 @@ export class WatershedStack extends Stack {
       topicName: "watershed-town-alerts",
     });
 
+    // SMS subscription for New Orleans emergency alerts.
+    // The phone number is read from the ALERT_PHONE_NUMBER environment variable
+    // at synth time. It must be verified in the SNS sandbox before receiving
+    // messages (run: aws sns verify-sms-sandbox-phone-number --phone-number <number>).
+    // To move out of sandbox, request production SMS access in the AWS console.
+    const alertPhoneNumber = process.env.ALERT_PHONE_NUMBER ?? "+15555550100";
+    townAlertsTopic.addSubscription(
+      new snsSubscriptions.SmsSubscription(alertPhoneNumber),
+    );
+
+    // EventBridge rule — filtered to ThresholdCrossed events for New Orleans only.
+    // The content filter on detail.townName means only New Orleans crossings reach
+    // the SNS topic, so the SMS fires exactly once per simulation that hits that town.
     new events.Rule(this, "ThresholdCrossedToSnsRule", {
       eventBus: riskEventBus,
       eventPattern: {
         source: ["watershed.simulation"],
         detailType: ["ThresholdCrossed"],
+        detail: {
+          townName: ["New Orleans"],
+        },
       },
-      targets: [new eventsTargets.SnsTopic(townAlertsTopic)],
+      targets: [
+        new eventsTargets.SnsTopic(townAlertsTopic, {
+          message: events.RuleTargetInput.fromText(
+            "EMERGENCY ALERT: Hazardous contamination detected upstream of New Orleans. Immediate action required. — DownStream Alert System",
+          ),
+        }),
+      ],
     });
 
     // --- Amazon Location Service ---
