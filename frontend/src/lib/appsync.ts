@@ -29,9 +29,10 @@ export interface AppSyncClient {
   ) => () => void;
 }
 
-export const appsyncEndpoint = import.meta.env.VITE_APPSYNC_ENDPOINT as string | undefined;
+export const appsyncEndpoint = import.meta.env.VITE_APPSYNC_URL as string | undefined;
 
 export function createAppSyncClient(): AppSyncClient | null {
   if (!appsyncEndpoint) return null;
-  throw new Error("AppSync client not yet wired — set VITE_APPSYNC_ENDPOINT and implement this");
+  // Real subscription client not yet implemented — falls back to mock driver.
+  return null;
 }

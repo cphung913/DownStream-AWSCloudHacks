@@ -9,7 +9,7 @@ import { generateSyntheticRiver, mockConcentrationAt } from "@/lib/syntheticRive
 /**
  * Connects the simulation store to tick sources.
  *
- *   - If VITE_APPSYNC_ENDPOINT is set, subscribes to AppSync onTickUpdate.
+ *   - If VITE_APPSYNC_URL is set, subscribes to AppSync onTickUpdate.
  *   - Otherwise drives a deterministic client-side mock so the UI is
  *     functional before AWS is provisioned. The mock walks the same
  *     synthetic river that `useRiverGraph` paints, so segment ids line up
@@ -38,7 +38,7 @@ export function useSimulationDriver() {
       );
     }
 
-    // --- mock driver (used when VITE_APPSYNC_ENDPOINT is unset) ---
+    // --- mock driver (used when VITE_APPSYNC_URL is unset or client not implemented) ---
     if (!config.sourceLngLat) return;
 
     const river = generateSyntheticRiver(config.sourceLngLat, config.region);

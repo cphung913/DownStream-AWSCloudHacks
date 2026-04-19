@@ -217,3 +217,7 @@ cdk.out/
 # macOS metadata and TS incremental build artifacts
 **/.DS_Store
 **/tsconfig.tsbuildinfo
+
+# Local env overrides (never commit secrets)
+.env.local
+frontend/.env.local
