@@ -1,0 +1,42 @@
+{
+  "source": "FEMA OpenFEMA HazardMitigationAssistanceProjects (HMGP)",
+  "source_url": "https://www.fema.gov/api/open/v4/HazardMitigationAssistanceProjects",
+  "generated_at": "2026-04-19T00:07:10Z",
+  "state_filter": "Missouri,Illinois,Tennessee,Arkansas,Mississippi,Louisiana,Kentucky,Iowa,Wisconsin,Minnesota",
+  "rows_processed": 8602,
+  "rows_categorized": 597,
+  "categories": {
+    "stormwater_management": {
+      "count": 299,
+      "mean_usd": 1118504.42,
+      "median_usd": 275943.39,
+      "p90_usd": 2840011.0,
+      "min_usd": 207.79,
+      "max_usd": 50992560.0
+    },
+    "bank_erosion_control": {
+      "count": 9,
+      "mean_usd": 512418.61,
+      "median_usd": 104842.0,
+      "p90_usd": 2897303.0,
+      "min_usd": 48600.0,
+      "max_usd": 2897303.0
+    },
+    "sewer_pollution_control": {
+      "count": 99,
+      "mean_usd": 2845610.64,
+      "median_usd": 250000.0,
+      "p90_usd": 3113723.25,
+      "min_usd": 2500.0,
+      "max_usd": 166795389.0
+    },
+    "flood_control": {
+      "count": 190,
+      "mean_usd": 1455820.42,
+      "median_usd": 249422.5,
+      "p90_usd": 3131844.0,
+      "min_usd": 234.0,
+      "max_usd": 20510659.0
+    }
+  }
+}
