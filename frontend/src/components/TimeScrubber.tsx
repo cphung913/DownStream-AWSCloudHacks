@@ -19,11 +19,11 @@ export function TimeScrubber() {
           className="font-mono text-[9px] tracking-[0.14em] uppercase"
           style={{ color: "rgba(0,0,0,0.6)" }}
         >
-          Hydrograph · concentration at leading edge
+          Timeline
         </span>
         <span className="font-mono text-[10px]" style={{ color: "#a63d2a" }}>
-          t+{tick.toString().padStart(2, "0")} / {totalTicks}
-          {status === "running" ? " · live" : status === "completed" ? " · scrub" : ""}
+          {(tick+1).toString().padStart(2, "0")} / {totalTicks +1}
+          {status === "running" ? " · live" : status === "completed" ? " · completed" : ""}
         </span>
       </div>
 
@@ -40,11 +40,11 @@ export function TimeScrubber() {
         className="flex justify-between mt-1.5 font-mono text-[9px]"
         style={{ color: "rgba(0,0,0,0.4)" }}
       >
-        <span>t+00</span>
-        <span>t+{Math.round(totalTicks * 0.25).toString().padStart(2, "0")}</span>
-        <span>t+{Math.round(totalTicks * 0.5).toString().padStart(2, "0")}</span>
-        <span>t+{Math.round(totalTicks * 0.75).toString().padStart(2, "0")}</span>
-        <span>t+{totalTicks}</span>
+        <span>0hr</span>
+        <span>{Math.round(totalTicks * 0.25).toString().padStart(2, "0")}hr</span>
+        <span>{Math.round(totalTicks * 0.5).toString().padStart(2, "0")}hr</span>
+        <span>{Math.ceil(totalTicks * 0.75).toString().padStart(2, "0")}hr</span>
+        <span>{totalTicks +1}hr</span>
       </div>
     </div>
   );

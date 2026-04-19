@@ -28,7 +28,7 @@ export function Header() {
         </svg>
         <div>
           <div
-            className="text-[13px] font-semibold tracking-[0.15em] uppercase"
+            className="text-[16px] font-semibold tracking-[0.15em] uppercase"
             style={{ color: "#e8e4d8" }}
           >
             Downstream · Watershed Spill Model
@@ -46,7 +46,7 @@ export function Header() {
         <RibbonStat label="BASIN" value={region} />
         <RibbonStat
           label="RUN"
-          value={`t+${tick.toString().padStart(2, "0")}h`}
+          value={`${tick.toString().padStart(2, "0")}h`}
         />
         <RibbonStat
           label="STATUS"

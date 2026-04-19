@@ -111,17 +111,6 @@ export function ControlPanel() {
         />
       </InputBlock>
 
-      <InputBlock label={`Ambient water temp · ${config.temperatureC.toFixed(1)}°C`}>
-        <Slider
-          value={config.temperatureC}
-          onChange={setTemperatureC}
-          min={0}
-          max={35}
-          step={0.5}
-        />
-        <RangeTicks ticks={["0°", "15°", "35°"]} />
-      </InputBlock>
-
       <DividerLabel>Timing</DividerLabel>
 
       <InputBlock label={`Response delay · ${config.responseDelayHours}h`}>
