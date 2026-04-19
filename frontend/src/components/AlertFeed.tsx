@@ -1,55 +1,54 @@
 import { useAlertStore } from "@/stores/alert";
-import { clsx } from "clsx";
 import type { RiskLevel } from "@/types/simulation";
 
-const RISK_CLASS: Record<RiskLevel, string> = {
-  CLEAR: "bg-risk-clear/15 border-risk-clear/40 text-risk-clear",
-  MONITOR: "bg-risk-monitor/15 border-risk-monitor/40 text-risk-monitor",
-  ADVISORY: "bg-risk-advisory/15 border-risk-advisory/40 text-risk-advisory",
-  DANGER: "bg-risk-danger/15 border-risk-danger/40 text-risk-danger",
+const RISK_DOT: Record<RiskLevel, string> = {
+  CLEAR: "#22c55e",
+  MONITOR: "#ca8a04",
+  ADVISORY: "#ea580c",
+  DANGER: "#dc2626",
 };
 
 export function AlertFeed() {
   const entries = useAlertStore((s) => s.entries);
-  const clear = useAlertStore((s) => s.clear);
 
   return (
-    <div className="panel p-4 flex flex-col gap-3 max-h-[46%]">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-dim">
-          Alert feed
-        </h3>
-        {entries.length ? (
-          <button onClick={clear} className="text-[11px] text-ink-faint hover:text-ink">
-            Clear
-          </button>
-        ) : null}
+    <div className="p-5 flex flex-col gap-3 animate-fade-in">
+      <div className="flex items-center justify-between mb-1">
+        <span className="field-label">Alert feed</span>
       </div>
-      <div className="flex flex-col gap-1.5 overflow-y-auto pr-1">
-        {entries.length === 0 ? (
-          <p className="text-xs text-ink-faint italic">
-            Threshold-crossing events from EventBridge will stream in here.
-          </p>
-        ) : (
-          entries.map((a) => (
+
+      {entries.length === 0 ? (
+        <p className="font-mono text-[11px] text-ink-faint italic">
+          Threshold-crossing events will stream in here.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {entries.map((a) => (
             <div
               key={a.id}
-              className={clsx(
-                "rounded-md border px-2.5 py-1.5 text-xs flex items-start gap-2",
-                RISK_CLASS[a.riskLevel],
-              )}
+              className="flex items-start gap-2.5 py-1.5 border-b border-border last:border-0 animate-slide-down"
             >
-              <span className="font-mono text-[10px] opacity-70 mt-0.5">t+{a.tick}</span>
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0 mt-1"
+                style={{ background: RISK_DOT[a.riskLevel] }}
+              />
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-ink truncate">{a.townName}</div>
-                <div className="text-[11px] text-ink-dim">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[12px] font-medium text-ink truncate">
+                    {a.townName}
+                  </span>
+                  <span className="font-mono text-[10px] text-ink-faint shrink-0">
+                    {a.tick}hr
+                  </span>
+                </div>
+                <div className="font-mono text-[10px] text-ink-dim mt-0.5">
                   {a.riskLevel} · pop {a.population.toLocaleString()}
                 </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

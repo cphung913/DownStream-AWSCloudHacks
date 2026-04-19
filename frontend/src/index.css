@@ -14,28 +14,49 @@
 }
 
 @layer components {
+  /* Left & right column panels — no glass, just paper */
   .panel {
-    @apply bg-bg-panel/95 border border-border backdrop-blur-md rounded-xl shadow-panel;
+    @apply bg-bg text-ink;
   }
+
+  /* Section divider label (HAZARD, TIMING, etc.) */
+  .section-divider {
+    @apply text-[10px] font-semibold tracking-[0.15em] uppercase text-ink border-t border-border
+           pt-2.5 mt-1;
+  }
+
+  /* Input block label */
   .field-label {
-    @apply text-xs font-medium uppercase tracking-wider text-ink-dim;
+    @apply text-[9px] font-medium uppercase tracking-[0.13em] text-ink-dim font-mono;
   }
+
   .field-value {
     @apply text-sm font-mono text-ink;
   }
+
+  /* Primary action button — dark ribbon style */
   .btn {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium
-           transition-colors focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-accent disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center text-sm font-medium
+           transition-colors focus-visible:outline-none
+           disabled:opacity-50 disabled:pointer-events-none;
   }
   .btn-primary {
-    @apply btn bg-accent-strong hover:bg-accent text-bg px-4 py-2;
+    @apply btn bg-bg-ribbon hover:bg-accent-strong text-ink-ribbon px-4 py-2 rounded-sm
+           text-[11px] font-mono tracking-wide;
   }
   .btn-ghost {
-    @apply btn border border-border-strong hover:bg-bg-elevated text-ink px-3 py-1.5;
+    @apply btn border border-border-strong hover:bg-bg-elevated text-ink px-3 py-1.5
+           rounded-sm text-[11px] font-mono;
   }
+
+  /* Small inline badge */
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5
-           text-xs font-medium text-ink-dim;
+    @apply inline-flex items-center gap-1 border border-border px-2 py-0.5
+           text-[10px] font-mono text-ink-dim rounded-sm;
+  }
+
+  /* Stat cell (2-col grid in report) */
+  .stat-cell {
+    @apply bg-bg p-3.5;
   }
 }

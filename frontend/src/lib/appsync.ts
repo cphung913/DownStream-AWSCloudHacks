@@ -14,12 +14,19 @@ import type {
 } from "./graphql";
 import type { IncidentReportJson } from "@/types/simulation";
 
-const client = generateClient();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _client: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function client(): any {
+  if (!_client) _client = generateClient();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return _client;
+}
 
 export async function startSimulation(
   input: StartSimulationInput,
 ): Promise<StartSimulationResult> {
-  const res = await client.graphql({
+  const res = await client().graphql({
     query: START_SIMULATION,
     variables: { input },
   });
@@ -31,7 +38,7 @@ export async function getTickSnapshot(
   simulationId: string,
   tick: number,
 ): Promise<TickUpdate | null> {
-  const res = await client.graphql({
+  const res = await client().graphql({
     query: GET_TICK_SNAPSHOT,
     variables: { simulationId, tick },
   });
@@ -43,7 +50,7 @@ export async function applyMitigation(
   simulationId: string,
   mitigation: MitigationInput,
 ): Promise<unknown> {
-  const res = await client.graphql({
+  const res = await client().graphql({
     query: APPLY_MITIGATION,
     variables: { simulationId, mitigation },
   });
@@ -65,7 +72,7 @@ export function subscribeToTicks(
   onError: (e: unknown) => void,
 ): { unsubscribe: () => void } {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const observable = client.graphql({
+  const observable = client().graphql({
     query: ON_TICK_UPDATE,
     variables: { simulationId },
   }) as unknown as { subscribe: (opts: { next: (v: any) => void; error: (e: unknown) => void }) => { unsubscribe: () => void } };

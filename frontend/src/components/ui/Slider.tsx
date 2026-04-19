@@ -32,10 +32,13 @@ export function Slider({ value, onChange, min, max, step = 1, className, ...rest
       step={step}
       aria-label={rest["aria-label"]}
     >
-      <Track className="bg-bg-elevated relative grow rounded-full h-[3px]">
-        <Range className="absolute bg-accent-strong rounded-full h-full" />
+      <Track className="relative grow h-[2px]" style={{ background: "rgba(0,0,0,0.12)" }}>
+        <Range className="absolute h-full" style={{ background: "#2d5a7a" }} />
       </Track>
-      <Thumb className="block h-4 w-4 rounded-full bg-ink border-2 border-accent-strong shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+      <Thumb
+        className="block h-3 w-3 rounded-full shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-grab"
+        style={{ background: "#fff", border: "2px solid #2d5a7a" }}
+      />
     </Root>
   );
 }

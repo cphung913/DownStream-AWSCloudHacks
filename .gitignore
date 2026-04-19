@@ -136,14 +136,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
-.envrc
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+
 
 # Spyder project settings
 .spyderproject
@@ -233,5 +226,4 @@ frontend/src/aws-exports.json
 .venv/
 
 # Local env overrides (never commit secrets)
-.env.local
-frontend/.env.local
+
