@@ -14,6 +14,7 @@ export function Map() {
   const [ready, setReady] = useState(false);
 
   const region = useSimulationStore((s) => s.config.region);
+  const sourceLngLat = useSimulationStore((s) => s.config.sourceLngLat);
   const setSource = useSimulationStore((s) => s.setSource);
   const placeBarrier = useSimulationStore((s) => s.placeBarrier);
   const mode = useUiStore((s) => s.mode);
@@ -21,7 +22,7 @@ export function Map() {
   const pendingRadius = useUiStore((s) => s.pendingMitigationRadius);
   const cancel = useUiStore((s) => s.cancel);
 
-  const { graph } = useRiverGraph(region);
+  const { graph } = useRiverGraph(region, sourceLngLat);
   useSimulationDriver();
 
   useEffect(() => {

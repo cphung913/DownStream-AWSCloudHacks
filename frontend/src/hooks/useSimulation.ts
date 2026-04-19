@@ -4,15 +4,16 @@ import { useAlertStore } from "@/stores/alert";
 import type { RiskLevel, SegmentState, TownRisk } from "@/types/simulation";
 import { TICK_RESOLUTION_MINUTES } from "@/types/simulation";
 import { createAppSyncClient } from "@/lib/appsync";
+import { generateSyntheticRiver, mockConcentrationAt } from "@/lib/syntheticRiver";
 
 /**
  * Connects the simulation store to tick sources.
  *
- *   - If VITE_APPSYNC_ENDPOINT is set, subscribes to AppSync onTickUpdate.
+ *   - If VITE_APPSYNC_URL is set, subscribes to AppSync onTickUpdate.
  *   - Otherwise drives a deterministic client-side mock so the UI is
- *     functional before AWS is provisioned. The mock uses the same
- *     applyTickUpdate contract that the real subscription uses, so nothing
- *     downstream in the UI needs to change when the backend comes online.
+ *     functional before AWS is provisioned. The mock walks the same
+ *     synthetic river that `useRiverGraph` paints, so segment ids line up
+ *     and the map actually lights up as the plume advances.
  */
 export function useSimulationDriver() {
   const status = useSimulationStore((s) => s.status);
@@ -37,16 +38,21 @@ export function useSimulationDriver() {
       );
     }
 
-    // --- mock driver (used when VITE_APPSYNC_ENDPOINT is unset) ---
-    const mockTowns: MockTown[] = [
-      { townId: "t1", name: "Cairo", population: 2100, segmentId: "seg-42", crossAt: 6 },
-      { townId: "t2", name: "Memphis", population: 633000, segmentId: "seg-118", crossAt: 14 },
-      { townId: "t3", name: "Greenville", population: 29000, segmentId: "seg-214", crossAt: 22 },
-      { townId: "t4", name: "Baton Rouge", population: 221000, segmentId: "seg-388", crossAt: 34 },
-      { townId: "t5", name: "New Orleans", population: 383000, segmentId: "seg-501", crossAt: 46 },
-    ];
+    // --- mock driver (used when VITE_APPSYNC_URL is unset or client not implemented) ---
+    if (!config.sourceLngLat) return;
+
+    const river = generateSyntheticRiver(config.sourceLngLat, config.region);
     const priorRisk = new Map<string, RiskLevel>();
-    const totalTicks = Math.max(24, Math.round(config.responseDelayHours + 24));
+    const firstCrossTick = new Map<string, number>();
+    // Segments far enough beyond the plume that mockConcentrationAt will always
+    // return 0 for them (tributaries + upstream-of-source main stem). Skipping
+    // them saves ~35 no-op map writes per tick.
+    const UNREACHED_THRESHOLD = 10_000;
+
+    // Walk the plume the full length of the river, plus slack for the peak
+    // to pass the last town. Ticks-per-advection-step is baked into
+    // mockConcentrationAt; we just need enough ticks to cover `maxDistance`.
+    const totalTicks = Math.max(24, Math.ceil(river.maxDistance / 2.4) + 10);
     const tickIntervalMs = Math.max(
       120,
       1000 * (TICK_RESOLUTION_MINUTES[config.tickResolution] / 60) * 0.5,
@@ -57,38 +63,42 @@ export function useSimulationDriver() {
       tick += 1;
 
       const segmentUpdates: [string, SegmentState][] = [];
-      for (let i = 0; i < 18; i++) {
-        const segmentId = `seg-${i * 25 + Math.floor(tick / 2)}`;
-        const concentration = Math.min(1, (tick - i) / 30);
-        if (concentration <= 0) continue;
-        segmentUpdates.push([segmentId, { concentration, riskLevel: classify(concentration) }]);
+      for (const seg of river.segments) {
+        if (seg.distanceFromSource >= UNREACHED_THRESHOLD) continue;
+        const concentration = mockConcentrationAt(seg.distanceFromSource, tick);
+        segmentUpdates.push([
+          seg.segmentId,
+          { concentration, riskLevel: classify(concentration) },
+        ]);
       }
 
-      const towns: TownRisk[] = mockTowns.map((mt) => {
-        const crossed = tick >= mt.crossAt;
-        const ticksSince = Math.max(0, tick - mt.crossAt);
-        const concentration = crossed ? Math.min(1, 0.2 + ticksSince * 0.05) : 0;
-        const riskLevel: RiskLevel = crossed ? classify(concentration) : "CLEAR";
+      const towns: TownRisk[] = river.towns.map((rt) => {
+        const concentration = mockConcentrationAt(rt.distanceFromSource, tick);
+        const riskLevel = classify(concentration);
+        if (concentration > 0 && !firstCrossTick.has(rt.townId)) {
+          firstCrossTick.set(rt.townId, tick);
+        }
         return {
-          townId: mt.townId,
-          name: mt.name,
-          population: mt.population,
-          segmentId: mt.segmentId,
+          townId: rt.townId,
+          name: rt.name,
+          population: rt.population,
+          segmentId: rt.segmentId,
+          lngLat: rt.lngLat,
           riskLevel,
-          tickCrossed: crossed ? mt.crossAt : null,
+          tickCrossed: firstCrossTick.get(rt.townId) ?? null,
         };
       });
 
       for (const t of towns) {
-        const prior = priorRisk.get(t.townId);
-        if (prior !== t.riskLevel && t.riskLevel !== "CLEAR") {
+        const prior = priorRisk.get(t.townId) ?? "CLEAR";
+        if (escalated(prior, t.riskLevel)) {
           pushAlert({
             tick,
             townId: t.townId,
             townName: t.name,
             population: t.population,
             riskLevel: t.riskLevel,
-            note: `Threshold crossed at tick ${tick}`,
+            note: `Crossed ${t.riskLevel} threshold at tick ${tick}`,
           });
         }
         priorRisk.set(t.townId, t.riskLevel);
@@ -98,11 +108,17 @@ export function useSimulationDriver() {
 
       if (tick >= totalTicks) {
         window.clearInterval(timer);
-        const affectedTowns = mockTowns.filter((mt) => mt.crossAt <= totalTicks);
-        const populationAtRisk = affectedTowns.reduce((sum, mt) => sum + mt.population, 0);
+        const affectedTowns = river.towns.filter((rt) =>
+          mockConcentrationAt(rt.distanceFromSource, totalTicks) > 0.15,
+        );
+        const populationAtRisk = affectedTowns.reduce((sum, rt) => sum + rt.population, 0);
         completeSimulation({
           executiveSummary:
-            `${formatGallons(config.volumeGallons)} of ${config.spillType.replace(/_/g, " ").toLowerCase()} released into the ${config.region} basin. With a ${config.responseDelayHours}h response delay, plume advected through ${affectedTowns.length} downstream municipalities before containment. Recommend immediate EPA Regional Response Team notification and downstream water utility isolation.`,
+            `${formatGallons(config.volumeGallons)} of ${config.spillType
+              .replace(/_/g, " ")
+              .toLowerCase()} released into the ${config.region} basin. With a ${
+              config.responseDelayHours
+            }h response delay, plume advected through ${affectedTowns.length} downstream municipalities before containment. Recommend immediate EPA Regional Response Team notification and downstream water utility isolation.`,
           populationAtRisk,
           estimatedCleanupCost: Math.round(config.volumeGallons * 180 + populationAtRisk * 12),
           regulatoryObligations: [
@@ -124,19 +140,22 @@ export function useSimulationDriver() {
   }, [status, simulationId, config, applyTickUpdate, completeSimulation, pushAlert]);
 }
 
-interface MockTown {
-  townId: string;
-  name: string;
-  population: number;
-  segmentId: string;
-  crossAt: number;
-}
-
 function classify(concentration: number): RiskLevel {
   if (concentration >= 0.75) return "DANGER";
   if (concentration >= 0.45) return "ADVISORY";
   if (concentration >= 0.15) return "MONITOR";
   return "CLEAR";
+}
+
+const RISK_ORDER: Record<RiskLevel, number> = {
+  CLEAR: 0,
+  MONITOR: 1,
+  ADVISORY: 2,
+  DANGER: 3,
+};
+
+function escalated(prior: RiskLevel, next: RiskLevel): boolean {
+  return RISK_ORDER[next] > RISK_ORDER[prior];
 }
 
 function formatGallons(n: number): string {

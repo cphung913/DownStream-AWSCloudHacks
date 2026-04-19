@@ -216,6 +216,10 @@ dist/
 cdk.out/
 cdk.context.json
 
+# macOS metadata and TS incremental build artifacts
+**/.DS_Store
+**/tsconfig.tsbuildinfo
+
 # Frontend generated
 frontend/src/aws-exports.json
 
@@ -228,3 +232,6 @@ frontend/src/aws-exports.json
 .aws-sam/
 .venv/
 
+# Local env overrides (never commit secrets)
+.env.local
+frontend/.env.local

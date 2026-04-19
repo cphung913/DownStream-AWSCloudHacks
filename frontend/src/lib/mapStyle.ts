@@ -1,21 +1,31 @@
 import type { StyleSpecification } from "maplibre-gl";
 
-export type Region = "mississippi" | "ohio" | "colorado";
-
-export const REGION_CENTER: Record<Region, [number, number, number]> = {
-  mississippi: [-90.1994, 35.1495, 5],
-  ohio: [-82.9988, 39.9612, 6],
-  colorado: [-105.7821, 39.5501, 6],
-};
-
 export const baseStyle: StyleSpecification = {
   version: 8,
-  sources: {},
+  sources: {
+    osm: {
+      type: "raster",
+      tiles: [
+        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      ],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors",
+    },
+  },
   layers: [
     {
-      id: "background",
-      type: "background",
-      paint: { "background-color": "#0a0e14" },
+      id: "basemap",
+      type: "raster",
+      source: "osm",
+      paint: { "raster-brightness-max": 0.55, "raster-saturation": -0.4 },
     },
   ],
+};
+
+export const REGION_CENTER: Record<string, [number, number, number]> = {
+  mississippi: [-90.5, 33.8, 5.1],
+  ohio: [-84.0, 39.5, 6.0],
+  colorado: [-111.0, 39.5, 5.6],
 };

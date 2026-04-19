@@ -81,9 +81,6 @@ export interface AppSyncClient {
   ) => () => void;
 }
 
-/**
- * Returns an AppSync client if the endpoint is configured, or null for mock mode.
- */
 export function createAppSyncClient(): AppSyncClient | null {
   const endpoint = import.meta.env.VITE_APPSYNC_URL as string | undefined;
   if (!endpoint) return null;
@@ -95,8 +92,7 @@ export function createAppSyncClient(): AppSyncClient | null {
         onTick,
         onError,
       );
-      // onComplete is called externally via WebSocket close / reportReady event
-      void onComplete; // kept for interface compatibility
+      void onComplete;
       return () => sub.unsubscribe();
     },
   };

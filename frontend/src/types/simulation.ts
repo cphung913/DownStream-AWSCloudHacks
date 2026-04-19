@@ -57,6 +57,8 @@ export interface TownRisk {
   name: string;
   population: number;
   segmentId: string;
+  /** Present in synthetic/demo mode; production towns are joined on segment geometry. */
+  lngLat?: LngLat;
   riskLevel: RiskLevel;
   tickCrossed: number | null;
 }

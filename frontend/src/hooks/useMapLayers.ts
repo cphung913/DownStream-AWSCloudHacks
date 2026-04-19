@@ -71,9 +71,10 @@ export function useMapLayers(map: MapLibreMap | null, ready: boolean, riverGeojs
     if (!src) return;
     const features: GeoJSON.Feature[] = [];
     for (const town of townRiskMap.values()) {
+      if (!town.lngLat) continue;
       features.push({
         type: "Feature",
-        geometry: { type: "Point", coordinates: [0, 0] },
+        geometry: { type: "Point", coordinates: town.lngLat },
         properties: {
           townId: town.townId,
           name: town.name,
