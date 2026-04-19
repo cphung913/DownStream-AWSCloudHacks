@@ -227,3 +227,10 @@ frontend/src/aws-exports.json
 
 # Local env overrides (never commit secrets)
 
+# Local-only planning/docs
+CLAUDE.md
+CONTEXT.md
+PLAN.md
+claude.md
+context.md
+plan.md
