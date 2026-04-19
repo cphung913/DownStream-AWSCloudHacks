@@ -104,3 +104,12 @@ export const GET_TICK_SNAPSHOT = /* GraphQL */ `
     }
   }
 `;
+
+export const GET_ICS208_URL = /* GraphQL */ `
+  query GetIcs208Url($simulationId: ID!) {
+    getIcs208Url(simulationId: $simulationId) {
+      url
+      error
+    }
+  }
+`;

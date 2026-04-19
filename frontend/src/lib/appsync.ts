@@ -4,6 +4,7 @@ import {
   START_SIMULATION,
   GET_TICK_SNAPSHOT,
   APPLY_MITIGATION,
+  GET_ICS208_URL,
 } from "./graphql";
 import type {
   TickUpdate,
@@ -47,6 +48,15 @@ export async function applyMitigation(
     variables: { simulationId, mitigation },
   });
   return res;
+}
+
+export async function getIcs208Url(simulationId: string): Promise<string | null> {
+  const res = await client.graphql({
+    query: GET_ICS208_URL,
+    variables: { simulationId },
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (res as any).data?.getIcs208Url?.url ?? null;
 }
 
 export function subscribeToTicks(

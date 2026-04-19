@@ -404,6 +404,16 @@ export class WatershedStack extends Stack {
       fieldName: "getTickSnapshot",
     });
 
+    // getIcs208Url — routed to report-generator (presigned URL mode)
+    const reportGeneratorDs = watershedApi.addLambdaDataSource(
+      "ReportGeneratorDs",
+      reportGeneratorFn,
+    );
+    reportGeneratorDs.createResolver("GetIcs208UrlResolver", {
+      typeName: "Query",
+      fieldName: "getIcs208Url",
+    });
+
     // publishTickUpdate: NONE data source (local resolver) that just echoes input
     // — actual publishing is done by KinesisToAppSyncFn via SigV4 mutate call.
     const noneDs = watershedApi.addNoneDataSource("NoneDs");

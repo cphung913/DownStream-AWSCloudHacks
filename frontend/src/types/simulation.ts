@@ -69,6 +69,7 @@ export interface IncidentReportJson {
   estimatedCleanupCost: number;
   regulatoryObligations: string[];
   mitigationPriorityList: string[];
+  ics208Key?: string;
 }
 
 export const SPILL_TYPE_LABEL: Record<SpillType, string> = {

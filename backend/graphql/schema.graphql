@@ -24,6 +24,7 @@ type IncidentReport {
   estimatedCleanupCost: Float!
   regulatoryObligations: [String!]!
   mitigationPriorityList: [String!]!
+  ics208Key: String
 }
 
 type Simulation {
@@ -77,6 +78,12 @@ type Mutation {
 type Query {
   getSimulation(simulationId: ID!): Simulation
   getTickSnapshot(simulationId: ID!, tick: Int!): TickUpdate
+  getIcs208Url(simulationId: ID!): Ics208UrlResult!
+}
+
+type Ics208UrlResult {
+  url: String
+  error: String
 }
 
 type Subscription {

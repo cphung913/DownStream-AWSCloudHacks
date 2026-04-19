@@ -1,8 +1,13 @@
+import { useState } from "react";
 import { useSimulationStore } from "@/stores/simulation";
+import { getIcs208Url } from "@/lib/appsync";
 
 export function IncidentReport() {
   const report = useSimulationStore((s) => s.report);
   const status = useSimulationStore((s) => s.status);
+  const simulationId = useSimulationStore((s) => s.simulationId);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   if (!report) {
     return (
@@ -17,6 +22,28 @@ export function IncidentReport() {
         </p>
       </div>
     );
+  }
+
+  async function handleDownloadIcs208() {
+    if (!simulationId) return;
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      const url = await getIcs208Url(simulationId);
+      if (!url) {
+        setDownloadError("ICS-208 PDF not ready yet.");
+        return;
+      }
+      // Trigger browser download
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ICS208-${simulationId.slice(0, 8)}.pdf`;
+      a.click();
+    } catch {
+      setDownloadError("Download failed. Try again.");
+    } finally {
+      setDownloading(false);
+    }
   }
 
   return (
@@ -40,6 +67,31 @@ export function IncidentReport() {
 
       <List label="Regulatory obligations" items={report.regulatoryObligations} />
       <List label="Mitigation priority" items={report.mitigationPriorityList} numbered />
+
+      {/* ICS-208 download */}
+      <div className="flex flex-col gap-1.5 pt-1 border-t border-border">
+        <span className="field-label">Official form</span>
+        <button
+          onClick={handleDownloadIcs208}
+          disabled={downloading}
+          className="flex items-center justify-center gap-2 w-full rounded-md border border-border bg-bg-elevated hover:bg-bg-hover active:scale-[0.98] transition-all px-3 py-2 text-xs font-medium text-ink disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {downloading ? (
+            <>
+              <Spinner />
+              Generating PDF…
+            </>
+          ) : (
+            <>
+              <DownloadIcon />
+              Download ICS 208 Safety Message
+            </>
+          )}
+        </button>
+        {downloadError && (
+          <p className="text-[11px] text-red-400">{downloadError}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -76,5 +128,35 @@ function List({
         ))}
       </ol>
     </div>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M8 1v9m0 0L5 7m3 3 3-3M2 12v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      className="animate-spin"
+    >
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
   );
 }

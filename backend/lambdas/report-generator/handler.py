@@ -3,6 +3,12 @@
 Aggregates the simulation outcome (town risk log + final tick state), asks
 Bedrock Claude for an EPA-style incident briefing, validates the JSON, and
 saves the result to ``SIMULATIONS_BUCKET/{simulationId}/report.json``.
+
+Also generates an ICS Form 208 Safety Message PDF via a second Bedrock call
+and uploads it to ``SIMULATIONS_BUCKET/{simulationId}/ics208.pdf``.
+
+Supports an additional invocation mode for presigned URL generation:
+  event = { "action": "getIcs208Url", "simulationId": "..." }
 """
 
 from __future__ import annotations
@@ -16,6 +22,7 @@ import boto3
 from botocore.exceptions import ClientError
 from pydantic import BaseModel, Field, ValidationError
 
+from ics208 import generate_and_upload_ics208
 from prompts import SYSTEM_PROMPT, build_user_prompt
 
 logger = logging.getLogger()
@@ -42,6 +49,10 @@ class IncidentReport(BaseModel):
 
 
 def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
+    # Presigned URL mode — called by the frontend download button via AppSync resolver
+    if event.get("action") == "getIcs208Url":
+        return _get_ics208_presigned_url(event["simulationId"])
+
     simulation_id: str = event["simulationId"]
     sim_input: dict[str, Any] = event["input"]
 
@@ -85,7 +96,39 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
         Body=json.dumps(report).encode("utf-8"),
         ContentType="application/json",
     )
+
+    # Generate ICS-208 PDF (non-blocking — failure doesn't fail the report)
+    ics208_key = generate_and_upload_ics208(
+        bedrock_client=_bedrock,
+        s3_client=_s3,
+        model_id=BEDROCK_MODEL_ID,
+        simulations_bucket=SIMULATIONS_BUCKET,
+        simulation_id=simulation_id,
+        spill_type=sim_input["spillType"],
+        volume_gallons=float(sim_input["volumeGallons"]),
+        response_delay_hours=int(sim_input["responseDelayHours"]),
+        affected_towns=affected_towns,
+        report=report,
+    )
+    if ics208_key:
+        report["ics208Key"] = ics208_key
+
     return report
+
+
+def _get_ics208_presigned_url(simulation_id: str) -> dict[str, Any]:
+    """Generate a 15-minute presigned GET URL for the ICS-208 PDF."""
+    key = f"{simulation_id}/ics208.pdf"
+    try:
+        url = _s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": SIMULATIONS_BUCKET, "Key": key},
+            ExpiresIn=900,
+        )
+        return {"url": url}
+    except ClientError:
+        logger.exception("Failed to generate presigned URL for %s", key)
+        return {"url": None, "error": "PDF not available"}
 
 
 def _aggregate_towns(simulation_id: str) -> list[dict[str, Any]]:
